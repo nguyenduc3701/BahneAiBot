@@ -5,7 +5,6 @@
 Tool for Bahne Ai on Telegram
 
 **Tool created by NguyenDuc and distributed without charge.**
-<a href="https://www.facebook.com/minh.duc.3701/"><img src="https://raw.githubusercontent.com/zuydd/image/main/facebook.svg" alt="Facebook"></a>
 
 > [!WARNING]
 > Tool trafficking of any kind is prohibited!!
