@@ -110,7 +110,7 @@ class Tools extends BaseRoot {
         header
       );
       if (response && response.data.success) {
-        this.log(colors.red(`${response.data.message}`));
+        this.log(colors.green(`${response.data.message}`));
         if (response.data.user) {
           this.userInfo = response.data.user;
         }
