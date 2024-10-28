@@ -9,6 +9,8 @@ class Tools extends BaseRoot {
     this.toolsName = ToolName || "";
     this.version = "0.1.1";
     this.waitingTime = 0;
+    this.waitingEnergyTime = null;
+    this.waitingAds75k = null;
     this.userInfo = null;
     this.waitingClaimTime = null;
     this.socialsJoined = [];
@@ -25,13 +27,13 @@ class Tools extends BaseRoot {
     };
   }
 
-  async renderQuestions() {
+  renderQuestions = async () => {
     for (let i = 0; i < questions.length; i++) {
       const questionAnswer = await this.askQuestion(questions[i].question);
       this.questionStatuses[questions[i].type] =
         questionAnswer.toLowerCase() === "y" ?? true;
     }
-  }
+  };
 
   addingWaitingTime = (extraTime) => {
     if (this.waitingTime < extraTime) {
@@ -60,7 +62,7 @@ class Tools extends BaseRoot {
         await this.sleep(1000);
       }
       if (this.questionStatuses.isDoTask) {
-        await this.resolveTask(queryId, dataUser, "token");
+        await this.resolveTask(queryId, dataUser, token);
         await this.sleep(1000);
       }
       if (this.questionStatuses.isDailyClaim) {
@@ -292,7 +294,7 @@ class Tools extends BaseRoot {
   };
 
   claimWatchAds50K = async (dataUser) => {
-    this.log(colors.yellow(`====== [Watch Ads #1] ======`));
+    this.log(colors.yellow(`====== [Watch Ads 50k] ======`));
     const header = this.getHeader();
     const request = { coinBalance: this.userInfo.coinBalance + 50000 };
     try {
@@ -317,7 +319,11 @@ class Tools extends BaseRoot {
   };
 
   claimWatchAds75K = async (dataUser) => {
-    this.log(colors.yellow(`====== [Watch Ads #2] ======`));
+    this.log(colors.yellow(`====== [Watch Ads 75k] ======`));
+    if (this.waitingAds75k && this.waitingAds75k < new Date()) {
+      this.log(colors.red(`Not time to claim watch ads 75k yet.`));
+      return;
+    }
     const header = this.getHeader();
     const request = { coinBalance: this.userInfo.coinBalance + 75000 };
     try {
@@ -331,6 +337,15 @@ class Tools extends BaseRoot {
         this.log(colors.green(`User claimed watch ads 75k successfully.`));
         if (response.data.user) {
           this.userInfo = response.data.user;
+        }
+        if (!this.waitingAds75k) {
+          this.log(
+            colors.cyan(`Check tasks success. Wait 10 minutes to claim.`)
+          );
+          this.waitingAds75k = this.addSecondsToDatetime(new Date(), 3 * 60);
+        }
+        if (this.waitingAds75k && this.waitingAds75k < new Date()) {
+          this.waitingAds75k = null;
         }
       } else {
         this.log(colors.red(`Fail to claim watch ads 75k!`));
@@ -372,18 +387,56 @@ class Tools extends BaseRoot {
     }
   };
 
+  updateEnergyNumber = async (queryId, dataUser, token) => {
+    this.log(colors.yellow(`====== [Update Energy] ======`));
+    const header = this.getHeader();
+    const request = {
+      coinBalance: this.userInfo.coinBalance,
+      weeklyCoinBalance: this.userInfo.weeklyCoinBalance,
+      dailyCoinBalance: this.userInfo.dailyCoinBalance,
+      overallCoinBalance: this.userInfo.overallCoinBalance,
+      energy: this.userInfo.maxEnergy,
+    };
+    try {
+      const response = await this.callApi(
+        METHOD.PUT,
+        `https://api.bahne.ai/api/users/${dataUser.id}`,
+        request,
+        header
+      );
+      if (response && response.data.success) {
+        this.log(colors.green(`Update energy successfully!`));
+        if (response.data.user) {
+          this.userInfo = response.data.user;
+        }
+      } else {
+        this.log(colors.red(`Fail to update energy!`));
+      }
+    } catch (error) {
+      this.log(colors.red(`Fail to update energy!`));
+    }
+  };
+
   playGame = async (queryId, dataUser, token) => {
     this.log(colors.yellow(`====== [Play Game] ======`));
     const maxEnergy = this.userInfo.maxEnergy;
     const rechargeSpeed = this.userInfo.rechargeSpeed;
     const rechargeSeconds = rechargeSpeed * maxEnergy;
 
-    if (this.userInfo.energy < 100) {
+    if (this.waitingEnergyTime && this.waitingEnergyTime > new Date()) {
       this.log(colors.red(`Not enough energy to play.`));
       return;
     }
+    if (
+      (!this.waitingEnergyTime && this.userInfo.energy === 0) ||
+      (this.waitingEnergyTime && this.waitingEnergyTime < new Date())
+    ) {
+      await this.updateEnergyNumber(queryId, dataUser, token);
+      this.waitingEnergyTime = null;
+      await this.sleep(1000);
+    }
 
-    const header = this.buildHeaderBahne();
+    const header = this.getHeader();
     while (this.userInfo.energy > 100) {
       let energy = this.userInfo.energy;
       let coinBalance = this.userInfo.coinBalance;
@@ -428,7 +481,13 @@ class Tools extends BaseRoot {
         this.log(colors.red(`Fail to claim tapping: ${error.message}`));
       }
     }
-    this.addingWaitingTime(Number(rechargeSeconds));
+    if (!this.waitingEnergyTime) {
+      this.log(colors.cyan(`Check tasks success. Wait 10 minutes to claim.`));
+      this.waitingEnergyTime = this.addSecondsToDatetime(
+        new Date(),
+        Number(rechargeSeconds)
+      );
+    }
   };
 
   getTotalClaimTaskNum = (tasks) => {

@@ -43,8 +43,8 @@ Tool for Bahne Ai on Telegram
 
 <details>
 <summary>v0.1.1 - 📅 28/10/2024</summary>
-- ✅ Update Can running multiple user (Just put more lines in `data.txt`).
-- ✅ Update Auto start earning.
+- ✅ Update Can running multiple user (Just put more lines in `data.txt`).<br>
+- ✅ Update Auto start earning.<br>
 - ✅ Update Auto join clan.
 </details>
 
