@@ -7,13 +7,15 @@ class Tools extends BaseRoot {
   constructor() {
     super();
     this.toolsName = ToolName || "";
-    this.version = "1.0";
+    this.version = "0.1.1";
     this.waitingTime = 0;
     this.userInfo = null;
     this.waitingClaimTime = null;
     this.socialsJoined = [];
     this.softWares = [];
     this.settings = null;
+    this.syncInfo = null;
+    this.clans = [];
     this.questionStatuses = {
       isPlayGame: false,
       isWatchAds: false,
@@ -31,17 +33,32 @@ class Tools extends BaseRoot {
     }
   }
 
+  addingWaitingTime = (extraTime) => {
+    if (this.waitingTime < extraTime) {
+      this.waitingTime = this.waitingTime + (extraTime - this.waitingTime);
+    }
+  };
+
   processAccount = async (queryId, dataUser) => {
     this.log(colors.yellow(`====== [Process Account] ======`));
     const token = await this.login(queryId, dataUser);
     await this.sleep(1000);
     if (token) {
+      await this.startEarning();
+      await this.sleep(1000);
       await this.buildHeader({ "Sec-Fetch-Site": "same-site" }, [
         "Sec-Fetch-Site",
       ]);
       await this.sleep(1000);
-      await this.dailyCheckInClaim();
+      await this.joinClan();
       await this.sleep(1000);
+      if (
+        this.questionStatuses.isDoTask ||
+        this.questionStatuses.isDailyClaim
+      ) {
+        await this.dailyCheckInClaim();
+        await this.sleep(1000);
+      }
       if (this.questionStatuses.isDoTask) {
         await this.resolveTask(queryId, dataUser, "token");
         await this.sleep(1000);
@@ -92,6 +109,151 @@ class Tools extends BaseRoot {
     } catch (error) {
       this.log(colors.red(`Fail to login Bahne Ai!`));
       return;
+    }
+  };
+
+  startEarning = async () => {
+    this.log(colors.yellow(`====== [Start Earning] ======`));
+    await this.getSyncInformation();
+    await this.sleep(1000);
+    if (!this.syncInfo) {
+      this.log(colors.red(`Not found sync information!`));
+      return;
+    }
+    const header = this.getHeader();
+    const request = {
+      userid: this.userInfo._id,
+      balance: this.syncInfo.balance,
+      todayEarnings: this.syncInfo.todayEarnings,
+      lastActivityTime: new Date().valueOf(),
+      isEarningActive: true,
+      dailyEarnings: this.syncInfo.dailyEarnings,
+      spins: this.syncInfo.spins,
+      usdt: this.syncInfo.usdt,
+      tons: this.syncInfo.tons,
+      prevReferrals: this.syncInfo.prevReferrals,
+    };
+    try {
+      const response = await this.callApi(
+        METHOD.POST,
+        "https://bahne.zapto.org/syncLocalStorage",
+        request,
+        header
+      );
+      if (response && response.data.message) {
+        this.log(colors.green(response.data.message));
+      } else {
+        this.log(colors.red(`Fail to start earning!`));
+      }
+    } catch (error) {
+      this.log(colors.red(`Fail to start earning!`));
+    }
+  };
+
+  getSyncInformation = async () => {
+    const header = this.getHeader();
+    try {
+      const response = await this.callApi(
+        METHOD.GET,
+        `https://bahne.zapto.org/syncLocalStorage?name=${this.userInfo._id}`,
+        null,
+        header
+      );
+      if (response && response.data) {
+        this.log(colors.green("Get sync information successfully!"));
+        this.syncInfo = response.data;
+      } else {
+        this.log(colors.red("Fail to get sync information!"));
+      }
+    } catch (error) {
+      this.log(colors.red("Fail to get sync information!"));
+    }
+  };
+
+  joinClan = async () => {
+    this.log(colors.yellow(`====== [Join Clan] ======`));
+    await this.sleep(1000);
+    const isJoined = await this.getUserClanInfo();
+    await this.sleep(1000);
+    if (isJoined) {
+      return;
+    }
+    await this.getListClans();
+    await this.sleep(1000);
+    let idxClan = 0;
+    let retries = 3;
+    while (retries > 0) {
+      await this.sleep(1000);
+      const choiceClan = this.clans[idxClan] || null;
+      if (!choiceClan) {
+        this.log(colors.red(`Not found any clan!`));
+        return;
+      }
+      const header = this.getHeader();
+      const request = { tg_id: this.userInfo.tg_id, clanId: choiceClan.clanId };
+      try {
+        const response = await this.callApi(
+          METHOD.POST,
+          `https://api.bahne.ai/api/users/clan/join`,
+          request,
+          header
+        );
+        if (response && response.data.success) {
+          this.log(colors.green(`Join clan ${choiceClan.name} successfully!`));
+          retries = 0;
+          return;
+        } else {
+          this.log(colors.red(`Fail to join clan! Try other clan...`));
+          idxClan = Math.floor(Math.random() * 100) + 1;
+          retries = retries - 1;
+        }
+      } catch (error) {
+        this.log(colors.red(`Fail to join clan! Try other clan...`));
+        idxClan = Math.floor(Math.random() * 100) + 1;
+        retries = retries - 1;
+      }
+    }
+  };
+
+  getListClans = async () => {
+    const header = this.getHeader();
+    try {
+      const response = await this.callApi(
+        METHOD.GET,
+        `https://api.bahne.ai/api/users/clan/leaderboard`,
+        null,
+        header
+      );
+      if (response && response.data.success) {
+        this.log(colors.green(`Get clan list information successfully!`));
+        if (response.data.clans) {
+          this.clans = response.data.clans;
+        }
+      } else {
+        this.log(colors.red(`Fail to join clan!`));
+      }
+    } catch (error) {
+      this.log(colors.red(`Fail to join clan!`));
+    }
+  };
+
+  getUserClanInfo = async () => {
+    const header = this.getHeader();
+    try {
+      const response = await this.callApi(
+        METHOD.GET,
+        `https://api.bahne.ai/api/users/clan/${this.userInfo._id}`,
+        null,
+        header
+      );
+      if (response && response.data.success) {
+        this.log(colors.green(`User already joined clan!`));
+        return true;
+      } else {
+        return false;
+      }
+    } catch (error) {
+      return false;
     }
   };
 
@@ -151,7 +313,7 @@ class Tools extends BaseRoot {
     } catch (error) {
       this.log(colors.red(`Fail to claim watch ads 50k!`));
     }
-    this.waitingTime = this.waitingTime + 60;
+    this.addingWaitingTime(60);
   };
 
   claimWatchAds75K = async (dataUser) => {
@@ -176,7 +338,7 @@ class Tools extends BaseRoot {
     } catch (error) {
       this.log(colors.red(`Fail to claim watch ads 75k!`));
     }
-    this.waitingTime = this.waitingTime + 3 * 60;
+    this.addingWaitingTime(3 * 60);
   };
 
   farmingClaim = async (queryId, dataUser, token) => {
@@ -266,7 +428,7 @@ class Tools extends BaseRoot {
         this.log(colors.red(`Fail to claim tapping: ${error.message}`));
       }
     }
-    this.waitingTime = this.waitingTime + Number(rechargeSeconds);
+    this.addingWaitingTime(Number(rechargeSeconds));
   };
 
   getTotalClaimTaskNum = (tasks) => {
@@ -312,7 +474,7 @@ class Tools extends BaseRoot {
         }
       }
     } else {
-      this.log(colors.red(`Can't find any tasks to claim`));
+      this.log(colors.cyan(`Resolved all tasks!`));
       return;
     }
     if (!this.waitingClaimTime) {
@@ -398,8 +560,9 @@ class Tools extends BaseRoot {
   };
 
   upgradeResourceSoftware = async (queryId, dataUser, token) => {
+    this.log(colors.yellow(`====== [Upgrade Resource Game] ======`));
     if (this.userInfo.coinBalance < BalanceToUpgrade) {
-      this.log(colors.yellow("Coin balance not met require balance!"));
+      this.log(colors.cyan("Coin balance not met require balance!"));
       return null;
     }
     const header = this.getHeader();
@@ -418,6 +581,9 @@ class Tools extends BaseRoot {
       await this.sleep(1000);
       try {
         const request = await this.buildSoftWareRequest(currentGreatestLevel);
+        if (!request) {
+          return;
+        }
         const response = await this.callApi(
           METHOD.PUT,
           `https://api.bahne.ai/api/users/${dataUser.id}`,
@@ -510,6 +676,15 @@ class Tools extends BaseRoot {
     this.renderFiglet(this.toolsName, this.version);
     await this.sleep(1000);
     await this.renderQuestions();
+    if (
+      !this.questionStatuses.isAutoUpgradeGameResource &&
+      !this.questionStatuses.isPlayGame &&
+      !this.questionStatuses.isWatchAds &&
+      !this.questionStatuses.isDoTask &&
+      !this.questionStatuses.isDailyClaim
+    ) {
+      return;
+    }
     await this.sleep(1000);
     const data = this.getDataFile();
 
@@ -537,7 +712,7 @@ class Tools extends BaseRoot {
         );
         await this.processAccount(queryId, dataUser.user);
       }
-      const extraMinutes = 2 * 60;
+      const extraMinutes = 1 * 60;
       await this.countdown(this.waitingTime + extraMinutes);
     }
   }

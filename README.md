@@ -29,14 +29,23 @@ Tool for Bahne Ai on Telegram
 - ✅ Auto Play Game.
 - ✅ Auto What Ads.
 - ✅ Auto Upgrade Game Resource (Only support for software now).
-- ❌ Not support running multiple user yet (Not test that function , maybe u can try it. Just put more lines in `data.txt`)
-- ❌ Not support auto start earning yet.
+- ✅ Can running multiple user (Just put more lines in `data.txt`).
+- ✅ Auto start earning.
+- ✅ Auto join clan.
+- ❌ Not support using proxy yet.
 
 ## 🔄 Update history
 
 <details>
 <summary>v0.1 - 📅 28/10/2024</summary>
 - Provide resources for a preliminary look.
+</details>
+
+<details>
+<summary>v0.1.1 - 📅 28/10/2024</summary>
+- ✅ Update Can running multiple user (Just put more lines in `data.txt`).
+- ✅ Update Auto start earning.
+- ✅ Update Auto join clan.
 </details>
 
 ## Note
