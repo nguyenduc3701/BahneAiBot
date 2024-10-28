@@ -480,7 +480,9 @@ class Tools extends BaseRoot {
       }
     }
     if (!this.waitingEnergyTime) {
-      this.log(colors.cyan(`Check tasks success. Wait 10 minutes to claim.`));
+      this.log(
+        colors.cyan(`Recovering energy. Wait 3 minutes to continue play game.`)
+      );
       this.waitingEnergyTime = this.addSecondsToDatetime(
         new Date(),
         Number(rechargeSeconds)
