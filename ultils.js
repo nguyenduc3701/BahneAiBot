@@ -168,8 +168,13 @@ class BaseRoot {
 
   async countdown(seconds) {
     for (let i = seconds; i >= 0; i--) {
+      const timestamp = new Date().toLocaleTimeString();
       readline.cursorTo(process.stdout, 0);
-      process.stdout.write(`\n===== Wait ${i} second to continue =====`);
+      process.stdout.write(
+        `${colors.blue(`\n[${timestamp}] [*]`)} ${colors.white(
+          `===== Wait ${i} second to continue =====`
+        )}`
+      );
       await new Promise((resolve) => setTimeout(resolve, 1000));
     }
   }

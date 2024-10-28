@@ -339,9 +339,7 @@ class Tools extends BaseRoot {
           this.userInfo = response.data.user;
         }
         if (!this.waitingAds75k) {
-          this.log(
-            colors.cyan(`Check tasks success. Wait 10 minutes to claim.`)
-          );
+          this.log(colors.cyan(`Wait 3 minutes to watch ads 75k again.`));
           this.waitingAds75k = this.addSecondsToDatetime(new Date(), 3 * 60);
         }
         if (this.waitingAds75k && this.waitingAds75k < new Date()) {
