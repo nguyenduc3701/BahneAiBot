@@ -612,9 +612,7 @@ class Tools extends BaseRoot {
   buildSoftWareRequest = (currentGreatestLevel) => {
     const userSoftware = [...this.softWares];
     const settingSoftware = [...this.settings.software];
-    const softwareToUpdate = userSoftware.find(
-      (i) => i.level < currentGreatestLevel
-    );
+    const softwareToUpdate = userSoftware.find((i) => i.level < 20);
     if (!softwareToUpdate) {
       this.log(colors.red(`Can't find any software can update!.`));
       return null;
