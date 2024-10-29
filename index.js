@@ -320,7 +320,7 @@ class Tools extends BaseRoot {
 
   claimWatchAds75K = async (dataUser) => {
     this.log(colors.yellow(`====== [Watch Ads 75k] ======`));
-    if (this.waitingAds75k && this.waitingAds75k < new Date()) {
+    if (this.waitingAds75k && this.waitingAds75k > new Date()) {
       this.log(colors.red(`Not time to claim watch ads 75k yet.`));
       return;
     }
@@ -426,7 +426,7 @@ class Tools extends BaseRoot {
       return;
     }
     if (
-      (!this.waitingEnergyTime && this.userInfo.energy === 0) ||
+      !this.waitingEnergyTime ||
       (this.waitingEnergyTime && this.waitingEnergyTime < new Date())
     ) {
       await this.updateEnergyNumber(queryId, dataUser, token);
@@ -743,14 +743,15 @@ class Tools extends BaseRoot {
       return;
     }
     await this.sleep(1000);
-    const data = this.getDataFile();
-
-    if (!data || data.length < 1) {
-      this.log(colors.red(`Don't have any data. Please check file data.txt!`));
-      await this.sleep(1000);
-    }
-
     while (true) {
+      const data = this.getDataFile();
+
+      if (!data || data.length < 1) {
+        this.log(
+          colors.red(`Don't have any data. Please check file data.txt!`)
+        );
+        await this.sleep(1000);
+      }
       for (let i = 0; i < data.length; i++) {
         const queryId = data[i];
         const dataUser = await this.extractUserData(queryId);
