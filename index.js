@@ -1,6 +1,6 @@
 const colors = require("colors");
 const { questions, ToolName, METHOD, BalanceToUpgrade } = require("./config");
-
+const fs = require("fs");
 const BaseRoot = require("./ultils");
 
 class Tools extends BaseRoot {
@@ -732,7 +732,20 @@ class Tools extends BaseRoot {
   async main() {
     this.renderFiglet(this.toolsName, this.version);
     await this.sleep(1000);
-    await this.renderQuestions();
+    const autoRun = this.getAutoRunFile();
+    if (!autoRun) {
+      await this.renderQuestions();
+    } else {
+      const autoRunStatuses = await this.updateQuestionStatuses(
+        autoRun,
+        this.questionStatuses
+      );
+      this.questionStatuses = autoRunStatuses;
+      await this.sleep(1000);
+      try {
+        fs.unlinkSync("auto_run.txt");
+      } catch (err) {}
+    }
     if (
       !this.questionStatuses.isAutoUpgradeGameResource &&
       !this.questionStatuses.isPlayGame &&

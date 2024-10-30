@@ -58,6 +58,32 @@ class BaseRoot {
     return data;
   };
 
+  getAutoRunFile = () => {
+    this.log(colors.bgCyan("Start by AutoGetQueryIds Tool"));
+    console.log("\n");
+    console.log("\n");
+    if (!fs.existsSync("auto_run.txt")) {
+      return null;
+    }
+    const data = fs
+      .readFileSync("auto_run.txt", "utf8")
+      .replace(/\r/g, "")
+      .split("\n")
+      .filter(Boolean);
+    return data;
+  };
+
+  updateQuestionStatuses(arr, obj) {
+    const wrkObj = { ...obj };
+    arr.forEach((item) => {
+      const [key, value] = item.split("=");
+      if (value === "y" && wrkObj.hasOwnProperty(key)) {
+        wrkObj[key] = true;
+      }
+    });
+    return wrkObj;
+  }
+
   getWalletFile = () => {
     const wallets = fs
       .readFileSync("wallets.txt", "utf8")
