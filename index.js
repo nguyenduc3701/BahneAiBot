@@ -732,10 +732,10 @@ class Tools extends BaseRoot {
   async main() {
     this.renderFiglet(this.toolsName, this.version);
     await this.sleep(1000);
-    const autoRun = this.getAutoRunFile();
-    if (!autoRun) {
+    if (!fs.existsSync("auto_run.txt")) {
       await this.renderQuestions();
     } else {
+      const autoRun = this.getAutoRunFile();
       const autoRunStatuses = await this.updateQuestionStatuses(
         autoRun,
         this.questionStatuses
@@ -746,6 +746,8 @@ class Tools extends BaseRoot {
         fs.unlinkSync("auto_run.txt");
       } catch (err) {}
     }
+    await this.sleep(1000);
+
     if (
       !this.questionStatuses.isAutoUpgradeGameResource &&
       !this.questionStatuses.isPlayGame &&
@@ -755,15 +757,14 @@ class Tools extends BaseRoot {
     ) {
       return;
     }
-    await this.sleep(1000);
+
     while (true) {
       const data = this.getDataFile();
-
       if (!data || data.length < 1) {
         this.log(
           colors.red(`Don't have any data. Please check file data.txt!`)
         );
-        await this.sleep(1000);
+        await this.sleep(100000);
       }
       for (let i = 0; i < data.length; i++) {
         const queryId = data[i];

@@ -62,9 +62,6 @@ class BaseRoot {
     this.log(colors.bgCyan("Start by AutoGetQueryIds Tool"));
     console.log("\n");
     console.log("\n");
-    if (!fs.existsSync("auto_run.txt")) {
-      return null;
-    }
     const data = fs
       .readFileSync("auto_run.txt", "utf8")
       .replace(/\r/g, "")
